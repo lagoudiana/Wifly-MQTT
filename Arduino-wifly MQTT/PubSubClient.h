@@ -39,12 +39,6 @@
 #define MQTTQOS1        (1 << 1)
 #define MQTTQOS2        (2 << 1)
 
-struct PublishMsg {
-	char sensorName[35];
-	uint8_t *value;
-	uint8_t vallen;
-};
-
 class PubSubClient {
 private:
 	Client* _client;
@@ -53,7 +47,7 @@ private:
 	unsigned long lastOutActivity;
 	unsigned long lastInActivity;
 	bool pingOutstanding;
-	PublishMsg (*callback)(char*,uint8_t*,unsigned int);
+	void (*callback)(char*,uint8_t*,unsigned int);
 	uint16_t readPacket();
 	uint8_t readByte();
 	boolean write(uint8_t header, uint8_t* buf, uint16_t length);
@@ -63,8 +57,8 @@ private:
 	uint16_t port;
 public:
 	PubSubClient(Client& client);
-	PubSubClient(uint8_t *, uint16_t, PublishMsg (*)(char*,uint8_t*,unsigned int), Client& client);
-	PubSubClient(char*, uint16_t, PublishMsg (*)	(char*,uint8_t*,unsigned int), Client& client);
+	PubSubClient(uint8_t *, uint16_t, void (*)(char*,uint8_t*,unsigned int), Client& client);
+	PubSubClient(char*, uint16_t, void (*)	(char*,uint8_t*,unsigned int), Client& client);
 	boolean connect(char *);
 	boolean connect(char*, char*, uint8_t, uint8_t, char*);
 	void disconnect();

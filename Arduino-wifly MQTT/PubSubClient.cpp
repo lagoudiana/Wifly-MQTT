@@ -11,14 +11,14 @@ PubSubClient::PubSubClient(Client& client) {
 	this->_client = &client;
 }
 
-PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, PublishMsg (*callback)(char*,uint8_t*,unsigned int), Client& client) {
+PubSubClient::PubSubClient(uint8_t *ip, uint16_t port, void (*callback)(char*,uint8_t*,unsigned int), Client& client) {
 	this->_client = &client;
 	this->callback = callback;
 	this->ip = ip;
 	this->port = port;
 }
 
-PubSubClient::PubSubClient(char* domain, uint16_t port, PublishMsg (*callback)(char*,uint8_t*,unsigned int), Client& client){
+PubSubClient::PubSubClient(char* domain, uint16_t port, void (*callback)(char*,uint8_t*,unsigned int), Client& client){
 	_client = &client;
 	this->callback = callback;
 	this->domain = domain;
@@ -158,9 +158,7 @@ boolean PubSubClient::loop() {
 						for (uint16_t i = 0; i<pl; i++) {
 							payload[i] = buffer[4+i+tl];
 						}
-						PublishMsg message;
-						message = callback(topic, payload, pl);
-						publish(message.sensorName, message.value, message.vallen);
+						callback(topic, payload, pl);
 					}
 				} else if (type == MQTTPINGREQ) { // respond to PINGREQ requested from server with PINGRESP
 					_client->write(MQTTPINGRESP);

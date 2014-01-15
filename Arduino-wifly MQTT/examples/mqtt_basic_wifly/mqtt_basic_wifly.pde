@@ -19,16 +19,18 @@
 #include <PubSubClient.h>
 
 #include "Credentials.h"
+//#include "Sensors.h"
 
 // Update these with values suitable for your network.
 uint8_t server[] = { 150, 140, 5, 20 };
+//CoapSensor *sensorsArray[MAX_SENSORS_NUM];
 char *mac;
 char channel[20];
 
 WiFlyClient wiFlyClient;
 PubSubClient client(server, 1883, callback, wiFlyClient);
 
-PublishMsg callback(char* topic, uint8_t* payload, unsigned int length) {
+void callback(char* topic, uint8_t* payload, unsigned int length) {
 	// handle message arrived
 	/* topic = part of the variable header:has topic name of the topic where the publish received
 	 * NOTE: variable header does not contain the 2 bytes with the 
@@ -43,27 +45,26 @@ PublishMsg callback(char* topic, uint8_t* payload, unsigned int length) {
 	digitalWrite(8,LOW);
 	delay(200);
 	
-	PublishMsg msg;
+	char sensorName[35];
 	char * sensor = strtok((char *) payload, ",");
 	int i = strcspn((char *) payload, ",");
 
-	strcpy(msg.sensorName,mac);
-	strcat(msg.sensorName,"/");
-	strcat(msg.sensorName,sensor);
+	strcpy(sensorName,mac);
+	strcat(sensorName,"/");
+	strcat(sensorName,sensor);
 
-	msg.value = payload+i;
-	msg.vallen = (length-i);
-
-	return msg;
+	uint8_t *value = payload+i;
+	uint8_t vallen = length-i;
+	
+	client.publish(sensorName,value,vallen);
 }
 
 void setup()
 {
-	
 	pinMode(8,OUTPUT);    // power up the XBee socket
 	//digitalWrite(8,HIGH);
 	// lots of time for the WiFly to start up
-	delay(10000);
+	delay(5000);
 	
 	Serial.begin(9600);   // Start hardware Serial for the RN-XV
 	WiFly.setUart(&Serial); // Tell the WiFly library that we are not using the SPIUart
