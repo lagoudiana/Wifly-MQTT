@@ -19,13 +19,13 @@
 #include <PubSubClient.h>
 
 #include "Credentials.h"
-//#include "Sensors.h"
+#include "Sensors.h"
 
 // Update these with values suitable for your network.
 uint8_t server[] = { 150, 140, 5, 20 };
-//CoapSensor *sensorsArray[MAX_SENSORS_NUM];
-char *mac;
-char channel[20];
+CoapSensor *sensorsArray[MAX_SENSORS_NUM];
+char *mac;				//wifly mac address
+char channel[20];		//topic to subscribe to (s + mac)
 
 WiFlyClient wiFlyClient;
 PubSubClient client(server, 1883, callback, wiFlyClient);
@@ -45,16 +45,16 @@ void callback(char* topic, uint8_t* payload, unsigned int length) {
 	digitalWrite(8,LOW);
 	delay(200);
 	
-	char sensorName[35];
-	char * sensor = strtok((char *) payload, ",");
-	int i = strcspn((char *) payload, ",");
+	char sensorName[35];							// topic to publish to (mac + sensor)
+	char * sensor = strtok((char *) payload, ",");	// sensor name
+	int i = strcspn((char *) payload, ",");			//remaininig of payload
 
-	strcpy(sensorName,mac);
+	strcpy(sensorName,mac);							// sensorName = mac+sensor
 	strcat(sensorName,"/");
 	strcat(sensorName,sensor);
 
-	uint8_t *value = payload+i;
-	uint8_t vallen = length-i;
+	uint8_t *value = payload+i;						//sensor's value
+	uint8_t vallen = length-i;						//sensor's value length
 	
 	client.publish(sensorName,value,vallen);
 }
@@ -79,20 +79,67 @@ void setup()
 		}
 	}
 	Serial.println("Association succeeded.");
-	channel[0] = 's';
-	mac = WiFly.getMAC();
-	strcat(channel, mac);
+
+	set_channel();
+
+	add_sensor(light1);
+	//add_sensor(&light2);
+	//add_sensor(&light3);
+	add_sensor(temp1);
+	//add_sensor(&temp2);
+	//add_sensor(&temp3);
+	add_sensor(rand1);
+	//add_sensor(&rand2);
+	//add_sensor(&rand3);
+
+	Serial.println(sensorCount);
 
 	if (client.connect("arduinoClient")) {
-		client.publish("outTopic","hello world");
 		client.subscribe(channel);
 	}
+	else
+		Serial.println("Connection failed.");
 }
 
 void loop()
 {
+	static unsigned long timestamp = 0;
 	if(!client.loop())
 		Serial.println("Client disconnected.");
-	//delay(3000);
-	//client.publish("outTopic", "rst");
+
+	if(millis() - timestamp > 30000) {
+		timestamp = millis();
+		sensors_loop();
+	}
+}
+
+void sensors_loop()
+{
+	uint8_t output[10];
+	size_t output_len;
+	char sensorName[35];
+	
+	for (uint8_t i = 0; i < sensorCount; i++) {
+		sensorsArray[i]->check();
+	}
+
+	for (uint8_t i = 0; i < sensorCount; i++) {
+		sensorsArray[i]->get_value(output, &output_len);
+		strcpy(sensorName,mac);
+		strcat(sensorName,"/");
+		strcat(sensorName,sensorsArray[i]->get_name());
+		client.publish(sensorName, output, output_len);
+	}
+}
+
+void add_sensor(CoapSensor * sensor)
+{
+	sensorsArray[sensorCount++] = sensor;
+}
+
+void set_channel()
+{
+	channel[0] = 's';
+	mac = WiFly.getMAC();
+	strcat(channel, mac);
 }
