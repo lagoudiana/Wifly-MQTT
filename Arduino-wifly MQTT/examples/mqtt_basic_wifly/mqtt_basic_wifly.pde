@@ -1,19 +1,3 @@
-/*
- * Basic MQTT example 
- * 
- *  - connects to an MQTT server
- *  - publishes "hello world" to the topic "outTopic"
- *  - subscribes to the topic "inTopic"
- *  
- *  Compatibly WiFly Libary can be found here https://github.com/dpslwk/WiFly
- *  Current WiFly Libary only supports DHCP out the box
- *  This version is based around the RN-XV on a Cisceo XBEE Shield
- *  The RN-XV on the xbee shield talks over the hardware serial line 
- *  so debuging my require a SoftSerial
- *  The Ciseco Shiled require pin 8 HIGH before powering up the RN-XV
- *  
- */
-
 #include <SPI.h>
 #include <WiFly.h>
 #include <PubSubClient.h>
@@ -83,14 +67,8 @@ void setup()
 	set_channel();
 
 	add_sensor(light1);
-	//add_sensor(&light2);
-	//add_sensor(&light3);
 	add_sensor(temp1);
-	//add_sensor(&temp2);
-	//add_sensor(&temp3);
 	add_sensor(rand1);
-	//add_sensor(&rand2);
-	//add_sensor(&rand3);
 
 	Serial.println(sensorCount);
 
@@ -104,9 +82,10 @@ void setup()
 void loop()
 {
 	static unsigned long timestamp = 0;
-	if(!client.loop())
+	if(!client.loop()) {
 		Serial.println("Client disconnected.");
-
+		while(1) {}
+	}
 	if(millis() - timestamp > 30000) {
 		timestamp = millis();
 		sensors_loop();
