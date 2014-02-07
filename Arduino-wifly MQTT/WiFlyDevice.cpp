@@ -465,7 +465,7 @@ void WiFlyDevice::setAdhocParams()
 	
 	// Enable Auto IP assignment, This allows the WiFly to automatically
 	// assign the IP addresses
-	sendCommand(F("set ip d 2"));
+	sendCommand(F("set ip dhcp 2"));
 }
 
 //
@@ -480,7 +480,7 @@ boolean WiFlyDevice::createAdHocNetwork(const char *ssid)
 
   DEBUG_LOG(1, "Entered WiFlyDevice::beginAdhoc()");
 
-  reboot(); // Reboot to get device into known state
+  //reboot(); // Reboot to get device into known state
   
   enterCommandMode();
 
