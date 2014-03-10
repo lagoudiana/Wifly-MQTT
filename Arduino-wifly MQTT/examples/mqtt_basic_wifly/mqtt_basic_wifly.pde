@@ -6,10 +6,11 @@
 #include "Sensors.h"
 
 // Update these with values suitable for your network.
-uint8_t server[] = { 150, 140, 5, 20 };
+//uint8_t server[] = { 150, 140, 5, 20 };
+char *server = "q.m2m.io";
 CoapSensor *sensorsArray[MAX_SENSORS_NUM];
 char *mac;				//wifly mac address
-char channel[20];		//topic to subscribe to (s + mac)
+char channel[30];		//topic to subscribe to (s + mac)
 
 WiFlyClient wiFlyClient;
 PubSubClient client(server, 1883, callback, wiFlyClient);
@@ -24,29 +25,38 @@ void callback(char* topic, uint8_t* payload, unsigned int length) {
 	 *          EXAMPLE of payload: lights,1
 	 * length = the length of the payload, until which index of payload
 	 */
-	digitalWrite(8,HIGH);
+	digitalWrite(8, HIGH);
 	delay(200);
-	digitalWrite(8,LOW);
+	digitalWrite(8, LOW);
 	delay(200);
 	
 	char sensorName[35];							// topic to publish to (mac + sensor)
 	char * sensor = strtok((char *) payload, ",");	// sensor name
 	int i = strcspn((char *) payload, ",");			//remaininig of payload
 
-	strcpy(sensorName,mac);							// sensorName = mac+sensor
-	strcat(sensorName,"/");
-	strcat(sensorName,sensor);
-
 	uint8_t *value = payload+i;						//sensor's value
-	uint8_t vallen = length-i;						//sensor's value length
-	
-	client.publish(sensorName,value,vallen);
+	size_t vallen = length-i;						//sensor's value length
+
+	uint8_t output[10];
+	size_t output_len;
+
+	for (uint8_t i = 0; i < sensorCount; i++) {
+		if(!strcmp(sensor, sensorsArray[i]->get_name())) {
+			sensorsArray[i]->set_value(value, vallen, output, &output_len);
+			strcpy(sensorName, "public/");
+			strcat(sensorName, mac);							// sensorName = mac+sensor
+			strcat(sensorName, "/");
+			strcat(sensorName, sensor);
+			client.publish(sensorName, output, output_len);
+			break;
+		}
+	}
 }
 
 void setup()
 {
-	pinMode(8,OUTPUT);    // power up the XBee socket
-	//digitalWrite(8,HIGH);
+	pinMode(8,OUTPUT);
+
 	// lots of time for the WiFly to start up
 	delay(5000);
 	
@@ -69,6 +79,8 @@ void setup()
 	add_sensor(light1);
 	add_sensor(temp1);
 	add_sensor(rand1);
+	add_sensor(rand2);
+	add_sensor(zone1);
 
 	Serial.println(sensorCount);
 
@@ -96,18 +108,18 @@ void sensors_loop()
 {
 	uint8_t output[10];
 	size_t output_len;
-	char sensorName[35];
+	char sensorName[40];
 	
-	for (uint8_t i = 0; i < sensorCount; i++) {
-		sensorsArray[i]->check();
-	}
 
 	for (uint8_t i = 0; i < sensorCount; i++) {
+		sensorsArray[i]->check();
+		strcpy(sensorName, "public/");
+		strcat(sensorName, mac);
+		strcat(sensorName, "/");
+		strcat(sensorName, sensorsArray[i]->get_name());
 		sensorsArray[i]->get_value(output, &output_len);
-		strcpy(sensorName,mac);
-		strcat(sensorName,"/");
-		strcat(sensorName,sensorsArray[i]->get_name());
 		client.publish(sensorName, output, output_len);
+		delay(100);
 	}
 }
 
@@ -118,7 +130,8 @@ void add_sensor(CoapSensor * sensor)
 
 void set_channel()
 {
-	channel[0] = 's';
+	//channel[0] = 's';
 	mac = WiFly.getMAC();
+	strcpy(channel, "public/s");
 	strcat(channel, mac);
 }
