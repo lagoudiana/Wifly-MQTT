@@ -79,7 +79,6 @@ void setup()
 	add_sensor(light1);
 	add_sensor(temp1);
 	add_sensor(rand1);
-	add_sensor(rand2);
 	add_sensor(zone1);
 
 	Serial.println(sensorCount);
